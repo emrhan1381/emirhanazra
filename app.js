@@ -69,7 +69,6 @@ function typeMessage() {
   setTimeout(typeMessage, deleting ? 45 : 85);
 }
 
-typeMessage();
   if (!clientFactory) {
     error.textContent = 'Bağlantı kütüphanesi yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.';
     return;
