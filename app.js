@@ -1,7 +1,4 @@
-
 // emirhanazra - Supabase bağlantısı
-// Publishable key tarayıcıda kullanılmak üzere tasarlanmıştır.
-// Secret/service_role anahtarlarını asla buraya koymayın.
 const SUPABASE_URL = "https://mgzmcsyfnujelrdkumcg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Z3RGCJKNr33akI5NhbK8-w_vobuR0yn";
 const MEMORY_BUCKET = "anilar";
@@ -24,50 +21,87 @@ document.addEventListener('DOMContentLoaded', async () => {
   const memoryPhoto = document.getElementById('memory-photo');
   const memoryFormHeading = document.getElementById('memory-form-heading');
   const saveMemoryButton = document.getElementById('save-memory');
-const gateMessage = document.getElementById('gate-message');
+  const gateMessage = document.getElementById('gate-message');
 
-const messages = [
-  "Ne yani hatırlamıyor musun?",
-  "Yoksa beni sevmiyor musun artık?",
-  "Unutmuş olamazsın.",
-  "Lütfen hatırlaa..."
-];
+  // Yanlış şifre mesajları
+  const messages = [
+    "Ne yani hatırlamıyor musun?",
+    "Yoksa beni sevmiyor musun artık?",
+    "Unutmuş olamazsın.",
+    "Lütfen hatırlaa..."
+  ];
 
-let messageIndex = 0;
-let charIndex = 0;
-let deleting = false;
+  let messageIndex = 0;
+  let charIndex = 0;
+  let deleting = false;
+  let messageTimer = null;
+  let animationActive = false;
 
-function typeMessage() {
-  const current = messages[messageIndex];
+  // Mesaj animasyonunu durdur
+  function stopMessageAnimation() {
+    animationActive = false;
 
-  gateMessage.textContent = current.substring(0, charIndex);
-
-  if (!deleting) {
-    charIndex++;
-
-    if (charIndex > current.length) {
-      if (messageIndex === messages.length - 1) {
-        charIndex = current.length;
-        setTimeout(typeMessage, 1200);
-        return;
-      }
-
-      deleting = true;
-      setTimeout(typeMessage, 1200);
-      return;
+    if (messageTimer) {
+      clearTimeout(messageTimer);
+      messageTimer = null;
     }
-  } else {
-    charIndex--;
 
-    if (charIndex < 0) {
-      charIndex = 0;
-      deleting = false;
-      messageIndex++;
+    if (gateMessage) {
+      gateMessage.textContent = '';
     }
   }
 
-  setTimeout(typeMessage, deleting ? 45 : 85);
-}
+  // Mesajları harf harf yazdır
+  function typeMessage() {
+    if (!animationActive || !gateMessage) return;
+
+    const current = messages[messageIndex];
+
+    gateMessage.textContent = current.substring(0, charIndex);
+
+    if (!deleting) {
+      charIndex++;
+
+      if (charIndex > current.length) {
+        if (messageIndex === messages.length - 1) {
+          charIndex = current.length;
+          animationActive = false;
+          return;
+        }
+
+        deleting = true;
+        messageTimer = setTimeout(typeMessage, 1200);
+        return;
+      }
+    } else {
+      charIndex--;
+
+      if (charIndex < 0) {
+        charIndex = 0;
+        deleting = false;
+        messageIndex++;
+      }
+    }
+
+    messageTimer = setTimeout(typeMessage, deleting ? 45 : 85);
+  }
+
+  // Animasyonu başlat
+  function startMessageAnimation() {
+    stopMessageAnimation();
+
+    if (!gateMessage) return;
+
+    messageIndex = 0;
+    charIndex = 0;
+    deleting = false;
+    animationActive = true;
+
+    typeMessage();
+  }
+
+  // Sayfa açıldığında mesaj görünmesin
+  stopMessageAnimation();
 
   if (!clientFactory) {
     error.textContent = 'Bağlantı kütüphanesi yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.';
@@ -79,52 +113,71 @@ function typeMessage() {
   let currentMemories = [];
 
   const start = new Date('2026-10-14T00:00:00');
+
   function tick() {
     const seconds = Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
+
     document.getElementById('days').textContent = Math.floor(seconds / 86400);
     document.getElementById('hours').textContent = Math.floor(seconds % 86400 / 3600);
     document.getElementById('minutes').textContent = Math.floor(seconds % 3600 / 60);
     document.getElementById('seconds').textContent = seconds % 60;
   }
+
   tick();
   setInterval(tick, 1000);
 
   function showSite() {
+    stopMessageAnimation();
     screen.hidden = true;
     content.hidden = false;
     loadMemories();
   }
 
   function showLogin(message = '') {
+    stopMessageAnimation();
     content.hidden = true;
     screen.hidden = false;
     error.textContent = message;
   }
 
+  // Giriş kontrolü
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
-    error.textContent = 'Giriş yapılıyor...';
-   const password = passwordInput.value;
-const { error: loginError } = await db.auth.signInWithPassword({
-    email: "emirhanazra@gmail.com",
-    password: password
-});
+
+    stopMessageAnimation();
+    error.textContent = '';
+
+    const password = passwordInput.value;
+
+    const { error: loginError } = await db.auth.signInWithPassword({
+      email: "emirhanazra@gmail.com",
+      password: password
+    });
+
     if (loginError) {
-      error.textContent = 'E-posta veya şifre hatalı. Tekrar deneyin.';
+      error.textContent = '';
       passwordInput.value = '';
       passwordInput.focus();
+
+      // Yalnızca yanlış girişte mesajları başlat
+      startMessageAnimation();
+
       return;
     }
+
+    stopMessageAnimation();
     error.textContent = '';
     showSite();
   });
 
+  // Çıkış
   logoutButton.addEventListener('click', async () => {
     await db.auth.signOut();
     memoryForm.hidden = true;
     showLogin('Oturum kapatıldı.');
   });
 
+  // Yeni anı formu
   showMemoryForm.addEventListener('click', () => {
     editingMemory = null;
     memoryForm.reset();
@@ -142,8 +195,10 @@ const { error: loginError } = await db.auth.signInWithPassword({
     editingMemory = null;
   });
 
+  // Anıları yükle
   async function loadMemories() {
     gallery.innerHTML = '<p>♡ Anılar yükleniyor...</p>';
+
     const { data, error: listError } = await db
       .from('memories')
       .select('id,title,description,image_url,created_at')
@@ -151,15 +206,18 @@ const { error: loginError } = await db.auth.signInWithPassword({
 
     if (listError) {
       gallery.innerHTML = '';
+
       const msg = document.createElement('p');
       msg.textContent = 'Anılar yüklenemedi. Supabase tablo ve erişim izinlerini kontrol edin.';
       gallery.appendChild(msg);
+
       console.error(listError);
       return;
     }
 
     currentMemories = data || [];
     gallery.innerHTML = '';
+
     if (!currentMemories.length) {
       const empty = document.createElement('p');
       empty.textContent = 'Henüz anı eklenmemiş. İlk anınızı ekleyin ♡';
@@ -190,22 +248,28 @@ const { error: loginError } = await db.auth.signInWithPassword({
 
       const body = document.createElement('div');
       body.className = 'memory-card-body';
+
       const title = document.createElement('h3');
       title.textContent = memory.title || 'Anımız';
+
       const description = document.createElement('p');
       description.textContent = memory.description || '';
+
       body.append(title, description);
 
       const actions = document.createElement('div');
       actions.className = 'memory-actions';
+
       const edit = document.createElement('button');
       edit.type = 'button';
       edit.textContent = 'Düzenle';
       edit.addEventListener('click', () => beginEdit(memory));
+
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.textContent = 'Sil';
       remove.addEventListener('click', () => deleteMemory(memory));
+
       actions.append(edit, remove);
       body.appendChild(actions);
       card.appendChild(body);
@@ -213,6 +277,7 @@ const { error: loginError } = await db.auth.signInWithPassword({
     }
   }
 
+  // Anı düzenleme
   function beginEdit(memory) {
     editingMemory = memory;
     memoryTitle.value = memory.title || '';
@@ -226,21 +291,34 @@ const { error: loginError } = await db.auth.signInWithPassword({
     memoryTitle.focus();
   }
 
+  // Anı silme
   async function deleteMemory(memory) {
     if (!confirm(`"${memory.title}" anısını silmek istediğine emin misin?`)) return;
-    const { error: deleteError } = await db.from('memories').delete().eq('id', memory.id);
+
+    const { error: deleteError } = await db
+      .from('memories')
+      .delete()
+      .eq('id', memory.id);
+
     if (deleteError) {
       alert('Anı silinemedi. Tekrar deneyin.');
       console.error(deleteError);
       return;
     }
-    const { error: storageError } = await db.storage.from(MEMORY_BUCKET).remove([memory.image_url]);
+
+    const { error: storageError } = await db.storage
+      .from(MEMORY_BUCKET)
+      .remove([memory.image_url]);
+
     if (storageError) console.error('Fotoğraf silme hatası:', storageError);
+
     await loadMemories();
   }
 
+  // Anı kaydetme ve düzenleme
   memoryForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+
     const title = memoryTitle.value.trim();
     const description = memoryDescription.value.trim();
     const file = memoryPhoto.files[0];
@@ -249,14 +327,17 @@ const { error: loginError } = await db.auth.signInWithPassword({
       memoryStatus.textContent = 'Lütfen anıya bir başlık yaz.';
       return;
     }
+
     if (!editingMemory && !file) {
       memoryStatus.textContent = 'Lütfen bir fotoğraf seç.';
       return;
     }
+
     if (file && !file.type.startsWith('image/')) {
       memoryStatus.textContent = 'Lütfen bir görsel dosyası seç.';
       return;
     }
+
     if (file && file.size > 10 * 1024 * 1024) {
       memoryStatus.textContent = 'Fotoğraf en fazla 10 MB olabilir.';
       return;
@@ -264,36 +345,57 @@ const { error: loginError } = await db.auth.signInWithPassword({
 
     saveMemoryButton.disabled = true;
     memoryStatus.textContent = 'Kaydediliyor...';
+
     let uploadedPath = null;
 
     try {
       let imagePath = editingMemory?.image_url || null;
+
       if (file) {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
         uploadedPath = `${crypto.randomUUID()}-${safeName}`;
-        const { error: uploadError } = await db.storage.from(MEMORY_BUCKET).upload(uploadedPath, file, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: file.type
-        });
+
+        const { error: uploadError } = await db.storage
+          .from(MEMORY_BUCKET)
+          .upload(uploadedPath, file, {
+            cacheControl: '3600',
+            upsert: false,
+            contentType: file.type
+          });
+
         if (uploadError) throw uploadError;
+
         imagePath = uploadedPath;
       }
 
       if (editingMemory) {
-        const { error: updateError } = await db.from('memories').update({
-          title, description, image_url: imagePath
-        }).eq('id', editingMemory.id);
+        const { error: updateError } = await db
+          .from('memories')
+          .update({
+            title,
+            description,
+            image_url: imagePath
+          })
+          .eq('id', editingMemory.id);
+
         if (updateError) throw updateError;
 
         if (file && editingMemory.image_url) {
-          const { error: oldPhotoError } = await db.storage.from(MEMORY_BUCKET).remove([editingMemory.image_url]);
+          const { error: oldPhotoError } = await db.storage
+            .from(MEMORY_BUCKET)
+            .remove([editingMemory.image_url]);
+
           if (oldPhotoError) console.error('Eski fotoğraf silinemedi:', oldPhotoError);
         }
       } else {
-        const { error: insertError } = await db.from('memories').insert({
-          title, description, image_url: imagePath
-        });
+        const { error: insertError } = await db
+          .from('memories')
+          .insert({
+            title,
+            description,
+            image_url: imagePath
+          });
+
         if (insertError) throw insertError;
       }
 
@@ -302,19 +404,28 @@ const { error: loginError } = await db.auth.signInWithPassword({
       editingMemory = null;
       memoryPhoto.required = true;
       memoryStatus.textContent = '';
+
       await loadMemories();
+
     } catch (err) {
       if (uploadedPath) {
         await db.storage.from(MEMORY_BUCKET).remove([uploadedPath]);
       }
+
       console.error(err);
       memoryStatus.textContent = 'Kaydedilemedi. Tablo, bucket ve erişim izinlerini kontrol edin.';
+
     } finally {
       saveMemoryButton.disabled = false;
     }
   });
 
+  // Mevcut oturumu kontrol et
   const { data: sessionData } = await db.auth.getSession();
-  if (sessionData?.session) showSite();
-  else showLogin();
+
+  if (sessionData?.session) {
+    showSite();
+  } else {
+    showLogin();
+  }
 });
