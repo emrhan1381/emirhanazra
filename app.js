@@ -60,7 +60,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     error.textContent = 'Giriş yapılıyor...';
-    const email = emailInput.value.trim();
     const password = passwordInput.value;
     const { error: loginError } = await db.auth.signInWithPassword({ email, password });
     if (loginError) {
