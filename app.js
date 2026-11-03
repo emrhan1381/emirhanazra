@@ -9,7 +9,6 @@ const MEMORY_BUCKET = "anilar";
 document.addEventListener('DOMContentLoaded', async () => {
   const clientFactory = window.supabase && window.supabase.createClient;
   const form = document.getElementById('password-form');
-  const emailInput = document.getElementById('login-email');
   const passwordInput = document.getElementById('site-password');
   const error = document.getElementById('password-error');
   const screen = document.getElementById('password-screen');
