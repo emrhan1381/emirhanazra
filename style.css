@@ -54,3 +54,11 @@ html,body,#site-content{min-height:100%;}
 .memory-actions{display:flex;gap:7px;justify-content:flex-end}
 .memory-actions button{padding:7px 12px;font-size:12px}
 @media(max-width:600px){.memory-form{padding:16px}.memory-card-body{padding:8px}.memory-actions button{padding:7px 10px}}
+.gate-message {
+  color: #bd7895;
+  font-size: 16px;
+  text-align: center;
+  min-height: 24px;
+  margin: 12px 0;
+  font-style: italic;
+}
