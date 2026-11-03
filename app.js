@@ -21,9 +21,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   const memoryPhoto = document.getElementById('memory-photo');
   const memoryFormHeading = document.getElementById('memory-form-heading');
   const saveMemoryButton = document.getElementById('save-memory');
-  const gateMessage = document.getElementById('gate-message');
 
-  // Yanlış şifre mesajları
+  // Mesaj alanını bul veya oluştur
+  let gateMessage = document.getElementById('gate-message');
+
+  if (!gateMessage) {
+    gateMessage = document.createElement('p');
+    gateMessage.id = 'gate-message';
+    gateMessage.className = 'gate-message';
+    gateMessage.setAttribute('aria-live', 'polite');
+    form.insertAdjacentElement('afterend', gateMessage);
+  }
+
+  // Mesajların görünümü
+  gateMessage.style.display = 'block';
+  gateMessage.style.minHeight = '24px';
+  gateMessage.style.textAlign = 'center';
+  gateMessage.style.color = '#d47791';
+  gateMessage.style.marginTop = '12px';
+  gateMessage.textContent = '';
+
   const messages = [
     "Ne yani hatırlamıyor musun?",
     "Yoksa beni sevmiyor musun artık?",
@@ -37,26 +54,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   let messageTimer = null;
   let animationActive = false;
 
-  // Mesaj animasyonunu durdur
   function stopMessageAnimation() {
     animationActive = false;
 
-    if (messageTimer) {
+    if (messageTimer !== null) {
       clearTimeout(messageTimer);
       messageTimer = null;
     }
 
-    if (gateMessage) {
-      gateMessage.textContent = '';
-    }
+    gateMessage.textContent = '';
   }
 
-  // Mesajları harf harf yazdır
   function typeMessage() {
-    if (!animationActive || !gateMessage) return;
+    if (!animationActive) return;
 
     const current = messages[messageIndex];
-
     gateMessage.textContent = current.substring(0, charIndex);
 
     if (!deleting) {
@@ -65,6 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (charIndex > current.length) {
         if (messageIndex === messages.length - 1) {
           charIndex = current.length;
+          gateMessage.textContent = current;
           animationActive = false;
           return;
         }
@@ -86,11 +99,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     messageTimer = setTimeout(typeMessage, deleting ? 45 : 85);
   }
 
-  // Animasyonu başlat
   function startMessageAnimation() {
     stopMessageAnimation();
-
-    if (!gateMessage) return;
 
     messageIndex = 0;
     charIndex = 0;
@@ -100,7 +110,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     typeMessage();
   }
 
-  // Sayfa açıldığında mesaj görünmesin
   stopMessageAnimation();
 
   if (!clientFactory) {
@@ -116,7 +125,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function tick() {
     const seconds = Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
-
     document.getElementById('days').textContent = Math.floor(seconds / 86400);
     document.getElementById('hours').textContent = Math.floor(seconds % 86400 / 3600);
     document.getElementById('minutes').textContent = Math.floor(seconds % 3600 / 60);
@@ -145,7 +153,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     event.preventDefault();
 
     stopMessageAnimation();
-    error.textContent = '';
+    error.textContent = 'Giriş yapılıyor...';
 
     const password = passwordInput.value;
 
@@ -159,25 +167,21 @@ document.addEventListener('DOMContentLoaded', async () => {
       passwordInput.value = '';
       passwordInput.focus();
 
-      // Yalnızca yanlış girişte mesajları başlat
       startMessageAnimation();
-
       return;
     }
 
-    stopMessageAnimation();
     error.textContent = '';
+    stopMessageAnimation();
     showSite();
   });
 
-  // Çıkış
   logoutButton.addEventListener('click', async () => {
     await db.auth.signOut();
     memoryForm.hidden = true;
     showLogin('Oturum kapatıldı.');
   });
 
-  // Yeni anı formu
   showMemoryForm.addEventListener('click', () => {
     editingMemory = null;
     memoryForm.reset();
@@ -195,7 +199,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     editingMemory = null;
   });
 
-  // Anıları yükle
   async function loadMemories() {
     gallery.innerHTML = '<p>♡ Anılar yükleniyor...</p>';
 
@@ -277,7 +280,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // Anı düzenleme
   function beginEdit(memory) {
     editingMemory = memory;
     memoryTitle.value = memory.title || '';
@@ -291,14 +293,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     memoryTitle.focus();
   }
 
-  // Anı silme
   async function deleteMemory(memory) {
     if (!confirm(`"${memory.title}" anısını silmek istediğine emin misin?`)) return;
 
-    const { error: deleteError } = await db
-      .from('memories')
-      .delete()
-      .eq('id', memory.id);
+    const { error: deleteError } = await db.from('memories').delete().eq('id', memory.id);
 
     if (deleteError) {
       alert('Anı silinemedi. Tekrar deneyin.');
@@ -306,16 +304,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const { error: storageError } = await db.storage
-      .from(MEMORY_BUCKET)
-      .remove([memory.image_url]);
+    const { error: storageError } = await db.storage.from(MEMORY_BUCKET).remove([memory.image_url]);
 
     if (storageError) console.error('Fotoğraf silme hatası:', storageError);
 
     await loadMemories();
   }
 
-  // Anı kaydetme ve düzenleme
   memoryForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -355,46 +350,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '-');
         uploadedPath = `${crypto.randomUUID()}-${safeName}`;
 
-        const { error: uploadError } = await db.storage
-          .from(MEMORY_BUCKET)
-          .upload(uploadedPath, file, {
-            cacheControl: '3600',
-            upsert: false,
-            contentType: file.type
-          });
+        const { error: uploadError } = await db.storage.from(MEMORY_BUCKET).upload(uploadedPath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.type
+        });
 
         if (uploadError) throw uploadError;
-
         imagePath = uploadedPath;
       }
 
       if (editingMemory) {
-        const { error: updateError } = await db
-          .from('memories')
-          .update({
-            title,
-            description,
-            image_url: imagePath
-          })
-          .eq('id', editingMemory.id);
+        const { error: updateError } = await db.from('memories').update({
+          title, description, image_url: imagePath
+        }).eq('id', editingMemory.id);
 
         if (updateError) throw updateError;
 
         if (file && editingMemory.image_url) {
-          const { error: oldPhotoError } = await db.storage
-            .from(MEMORY_BUCKET)
-            .remove([editingMemory.image_url]);
-
+          const { error: oldPhotoError } = await db.storage.from(MEMORY_BUCKET).remove([editingMemory.image_url]);
           if (oldPhotoError) console.error('Eski fotoğraf silinemedi:', oldPhotoError);
         }
       } else {
-        const { error: insertError } = await db
-          .from('memories')
-          .insert({
-            title,
-            description,
-            image_url: imagePath
-          });
+        const { error: insertError } = await db.from('memories').insert({
+          title, description, image_url: imagePath
+        });
 
         if (insertError) throw insertError;
       }
@@ -404,7 +384,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       editingMemory = null;
       memoryPhoto.required = true;
       memoryStatus.textContent = '';
-
       await loadMemories();
 
     } catch (err) {
@@ -420,12 +399,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // Mevcut oturumu kontrol et
   const { data: sessionData } = await db.auth.getSession();
 
-  if (sessionData?.session) {
-    showSite();
-  } else {
-    showLogin();
-  }
+  if (sessionData?.session) showSite();
+  else showLogin();
 });
