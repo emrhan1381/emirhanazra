@@ -24,7 +24,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   const memoryPhoto = document.getElementById('memory-photo');
   const memoryFormHeading = document.getElementById('memory-form-heading');
   const saveMemoryButton = document.getElementById('save-memory');
+const gateMessage = document.getElementById('gate-message');
 
+const messages = [
+  "Ne yani hatırlamıyor musun?",
+  "Yoksa beni sevmiyor musun artık?",
+  "Unutmuş olamazsın.",
+  "Lütfen hatırlaa..."
+];
+
+let messageIndex = 0;
+let charIndex = 0;
+let deleting = false;
+
+function typeMessage() {
+  const current = messages[messageIndex];
+
+  gateMessage.textContent = current.substring(0, charIndex);
+
+  if (!deleting) {
+    charIndex++;
+
+    if (charIndex > current.length) {
+      if (messageIndex === messages.length - 1) {
+        charIndex = current.length;
+        setTimeout(typeMessage, 1200);
+        return;
+      }
+
+      deleting = true;
+      setTimeout(typeMessage, 1200);
+      return;
+    }
+  } else {
+    charIndex--;
+
+    if (charIndex < 0) {
+      charIndex = 0;
+      deleting = false;
+      messageIndex++;
+    }
+  }
+
+  setTimeout(typeMessage, deleting ? 45 : 85);
+}
+
+typeMessage();
   if (!clientFactory) {
     error.textContent = 'Bağlantı kütüphanesi yüklenemedi. İnternet bağlantını kontrol edip sayfayı yenile.';
     return;
