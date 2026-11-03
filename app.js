@@ -60,8 +60,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     error.textContent = 'Giriş yapılıyor...';
-    const password = passwordInput.value;
-    const { error: loginError } = await db.auth.signInWithPassword({ email, password });
+   const password = passwordInput.value;
+const { error: loginError } = await db.auth.signInWithPassword({
+    email: "emirhanazra@gmail.com",
+    password: password
+});
     if (loginError) {
       error.textContent = 'E-posta veya şifre hatalı. Tekrar deneyin.';
       passwordInput.value = '';
