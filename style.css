@@ -29,3 +29,12 @@
 /* Keep the same romantic background visible across the full scroll height. */
 html,body,#site-content{min-height:100%;}
 #site-content{min-height:100vh;}
+
+/* Albüm anı kartları */
+.memory-card{min-width:0;overflow:hidden;background:#fff8fb;border:1px solid #f4c2d3;border-radius:15px;box-shadow:0 2px 12px #c55a821c;text-align:left}
+.memory-card img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border:0;border-radius:0;box-shadow:none}
+.memory-details{padding:9px 10px 4px}
+.memory-details h3{margin:0 0 5px;color:#c43d78;font-family:Georgia,serif;font-size:16px;font-weight:600;overflow-wrap:anywhere}
+.memory-details p{margin:0;color:#9f5875;font-size:12px;line-height:1.4;overflow-wrap:anywhere;white-space:pre-wrap}
+.delete-memory{display:block;margin:8px 10px 10px;padding:7px 12px;border:0;border-radius:16px;background:#f7d3e0;color:#a83261;font-size:12px;cursor:pointer}
+.delete-memory:disabled{opacity:.55;cursor:wait}
