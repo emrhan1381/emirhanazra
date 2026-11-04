@@ -94,10 +94,54 @@ document.addEventListener("DOMContentLoaded", () => {
         const description = document.createElement("p");
         description.textContent = memory.description || "";
         details.append(title, description);
+        const menuWrap = document.createElement("div");
+        menuWrap.className = "memory-menu-wrap";
+        const menuButton = document.createElement("button");
+        menuButton.type = "button";
+        menuButton.className = "memory-menu-trigger";
+        menuButton.textContent = "⋯";
+        menuButton.setAttribute("aria-label", "Anı seçenekleri");
+        menuButton.setAttribute("aria-expanded", "false");
+        const menu = document.createElement("div");
+        menu.className = "memory-menu";
+        menu.hidden = true;
+
+        const editTitleButton = document.createElement("button");
+        editTitleButton.type = "button";
+        editTitleButton.textContent = "Başlığı düzenle";
+        editTitleButton.addEventListener("click", async () => {
+          const nextTitle = window.prompt("Anının yeni başlığı:", memory.title || "");
+          if (nextTitle === null) return;
+          const { error: updateError } = await supabaseClient.from("memories")
+            .update({ title: nextTitle.trim() || "İsimsiz anı" }).eq("id", memory.id);
+          if (updateError) {
+            galleryStatus.textContent = "Başlık güncellenemedi: " + updateError.message;
+            return;
+          }
+          await loadPhotos();
+          galleryStatus.textContent = "Başlık güncellendi ♡";
+        });
+
+        const editDescriptionButton = document.createElement("button");
+        editDescriptionButton.type = "button";
+        editDescriptionButton.textContent = "Açıklamayı düzenle";
+        editDescriptionButton.addEventListener("click", async () => {
+          const nextDescription = window.prompt("Anının yeni açıklaması:", memory.description || "");
+          if (nextDescription === null) return;
+          const { error: updateError } = await supabaseClient.from("memories")
+            .update({ description: nextDescription.trim() }).eq("id", memory.id);
+          if (updateError) {
+            galleryStatus.textContent = "Açıklama güncellenemedi: " + updateError.message;
+            return;
+          }
+          await loadPhotos();
+          galleryStatus.textContent = "Açıklama güncellendi ♡";
+        });
+
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
-        deleteButton.className = "delete-memory";
-        deleteButton.textContent = "Sil ♡";
+        deleteButton.textContent = "Fotoğrafı sil";
+        deleteButton.className = "memory-menu-delete";
         deleteButton.addEventListener("click", async () => {
           if (!window.confirm("Bu anıyı silmek istediğinize emin misiniz?")) return;
           deleteButton.disabled = true;
@@ -121,7 +165,15 @@ document.addEventListener("DOMContentLoaded", () => {
             deleteButton.disabled = false;
           }
         });
-        card.append(image, details, deleteButton);
+
+        menu.append(editTitleButton, editDescriptionButton, deleteButton);
+        menuButton.addEventListener("click", () => {
+          const isOpen = !menu.hidden;
+          menu.hidden = isOpen;
+          menuButton.setAttribute("aria-expanded", String(!isOpen));
+        });
+        menuWrap.append(menuButton, menu);
+        card.append(image, details, menuWrap);
         gallery.appendChild(card);
       });
     }
