@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
     addLabel.htmlFor = "photos";
   }
 
-  addLabel.textContent = "＋ Fotoğraf Seç ♡";
+  addLabel.textContent = "＋ Fotoğraf Ekle ♡";
 
   photoForm.innerHTML = `
     <input
@@ -238,7 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gallery.innerHTML = "";
 
     if (!data || data.length === 0) {
-      gallery.innerHTML = "<p>Henüz fotoğraf eklenmemiş. ♡</p>";
+      gallery.innerHTML = "<p>Henüz fotoğraf yok. ♡</p>";
       return;
     }
 
