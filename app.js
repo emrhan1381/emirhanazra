@@ -16,11 +16,21 @@ document.addEventListener("DOMContentLoaded", () => {
   // Relationship counter
   const start = new Date("2026-10-14T00:00:00");
   function tick() {
-    const seconds = Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
-    document.getElementById("days").textContent = Math.floor(seconds / 86400);
-    document.getElementById("hours").textContent = Math.floor((seconds % 86400) / 3600);
-    document.getElementById("minutes").textContent = Math.floor((seconds % 3600) / 60);
-    document.getElementById("seconds").textContent = seconds % 60;
+    const now = new Date();
+    let months = (now.getFullYear() - start.getFullYear()) * 12
+      + (now.getMonth() - start.getMonth());
+    let anniversary = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    if (now < anniversary) {
+      months--;
+      anniversary = new Date(start.getFullYear(), start.getMonth() + months, start.getDate());
+    }
+
+    const remainingSeconds = Math.max(0, Math.floor((now - anniversary) / 1000));
+    document.getElementById("months").textContent = Math.max(0, months);
+    document.getElementById("days").textContent = Math.floor(remainingSeconds / 86400);
+    document.getElementById("hours").textContent = Math.floor((remainingSeconds % 86400) / 3600);
+    document.getElementById("minutes").textContent = Math.floor((remainingSeconds % 3600) / 60);
+    document.getElementById("seconds").textContent = remainingSeconds % 60;
   }
   tick();
   setInterval(tick, 1000);
