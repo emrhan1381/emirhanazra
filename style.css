@@ -66,3 +66,47 @@ html,body,#site-content{min-height:100%;}
 .photo-viewer-backdrop img{display:block;max-width:min(100%,1200px);max-height:100%;width:auto;height:auto;object-fit:contain;border:3px solid #fff4f8;border-radius:12px;box-shadow:0 12px 45px #0008;cursor:default}
 .photo-viewer-close{position:absolute;top:15px;right:18px;width:42px;height:42px;border:1px solid #f3bfd1;border-radius:50%;background:#fff5f9;color:#b83d70;font-size:29px;line-height:1;cursor:pointer}
 .memory-card img{cursor:zoom-in}
+
+
+/* Mobil ekran uyumlulugu */
+@media (max-width: 600px) {
+  main { padding: 16px 12px 36px; }
+  header { font-size: 17px; }
+  .hero { padding: 34px 0 30px; }
+  h1 { font-size: clamp(27px, 8.5vw, 42px); line-height: 1.18; overflow-wrap: anywhere; }
+  .hero > p { font-size: clamp(18px, 5vw, 24px); line-height: 1.35; margin: 13px 0 22px; }
+  .counter { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; padding: 15px 7px; border-radius: 18px; width: 100%; }
+  .counter div { min-width: 0; gap: 4px; }
+  .counter b { font-size: clamp(17px, 5.2vw, 25px); line-height: 1.15; }
+  .counter small { font-size: clamp(9px, 2.8vw, 11px); overflow-wrap: anywhere; }
+  .since { font-size: 10px; }
+  h2 { font-size: clamp(23px, 6.5vw, 29px); line-height: 1.2; margin: 18px 0; }
+  .gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .memory-details { padding: 8px 8px 4px; }
+  .memory-details h3 { font-size: clamp(13px, 3.8vw, 16px); line-height: 1.3; }
+  .memory-details p { font-size: 12px; line-height: 1.45; }
+  .memory-menu-wrap { right: 6px; bottom: 6px; }
+  .memory-menu-trigger { width: 32px; height: 32px; }
+  .memory-menu { min-width: 158px; }
+  .memory-menu button { font-size: 12px; padding: 10px; }
+  .add { max-width: 100%; padding: 11px 18px; }
+  .password-screen { padding: 16px; }
+  .password-card { padding: 46px 20px 40px; }
+  .gate-title { font-size: clamp(29px, 8vw, 38px); }
+  .password-card .gate-prompt { font-size: 19px; }
+  .memory-modal-backdrop { padding: 12px; }
+  .memory-modal { width: 100%; max-height: calc(100dvh - 24px); overflow-y: auto; padding: 24px 17px 18px; border-radius: 20px; }
+  .memory-modal h3 { font-size: 22px; }
+  .memory-editor-form input, .memory-editor-form textarea { font-size: 16px; }
+  .memory-modal-actions button { padding: 11px 15px; }
+  .photo-viewer-backdrop { padding: 58px 10px 14px; }
+  .photo-viewer-backdrop img { max-width: 100%; max-height: calc(100dvh - 82px); }
+}
+@media (max-width: 360px) {
+  main { padding-left: 9px; padding-right: 9px; }
+  .counter { gap: 2px; padding-left: 4px; padding-right: 4px; }
+  .counter b { font-size: 16px; }
+  .counter small { font-size: 9px; }
+  .gallery { gap: 7px; }
+  .memory-details p { font-size: 11px; }
+}
