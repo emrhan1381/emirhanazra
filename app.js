@@ -25,7 +25,28 @@ document.addEventListener("DOMContentLoaded", () => {
   let db = null;
 
   if (window.supabase?.createClient) {
-    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+      },
+      global: {
+        fetch: (input, init = {}) => {
+          const request = new Request(input, init);
+          const headers = new Headers(request.headers);
+
+          // Publishable keys are API keys, not JWTs.
+          // Keep the apikey header, but do not send the publishable key
+          // as an Authorization Bearer token to Storage.
+          if (headers.get("Authorization") === `Bearer ${SUPABASE_KEY}`) {
+            headers.delete("Authorization");
+          }
+
+          return fetch(new Request(request, { headers }));
+        }
+      }
+    });
   }
 
   // İLİŞKİ SAYACI
