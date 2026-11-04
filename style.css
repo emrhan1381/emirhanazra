@@ -47,3 +47,22 @@ html,body,#site-content{min-height:100%;}
 .memory-menu button{display:block;width:100%;padding:10px 12px;border:0;border-radius:8px;background:transparent;color:#9f3562;text-align:left;font-size:12px;cursor:pointer}
 .memory-menu button:hover{background:#ffe8f0}
 .memory-menu .memory-menu-delete{color:#bd315d}
+
+/* Pembe temalı site içi anı düzenleme penceresi */
+.memory-modal-backdrop{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;background:#6b294866;backdrop-filter:blur(4px)}
+.memory-modal{position:relative;width:min(100%,420px);padding:28px 22px 22px;border:1px solid #f2bfd0;border-radius:24px;background:linear-gradient(145deg,#fffafd,#ffeaf2);box-shadow:0 18px 55px #702b4b44;text-align:left}
+.memory-modal h3{margin:0 35px 20px 0;color:#d94f87;font-family:Georgia,serif;font-size:25px;font-weight:500}
+.memory-modal-close{position:absolute;top:12px;right:14px;width:34px;height:34px;border:0;border-radius:50%;background:#fbe0e9;color:#b83d70;font-size:25px;cursor:pointer}
+.memory-editor-form{display:flex;flex-direction:column;gap:15px}
+.memory-editor-form label{display:flex;flex-direction:column;gap:7px;color:#a74670;font-size:13px}
+.memory-editor-form input,.memory-editor-form textarea{width:100%;padding:12px 14px;border:1px solid #efb4ca;border-radius:13px;background:#fffafd;color:#873454;font:15px Arial,sans-serif;outline:none}
+.memory-editor-form textarea{min-height:105px;resize:vertical}
+.memory-editor-form input:focus,.memory-editor-form textarea:focus{border-color:#d94f87;box-shadow:0 0 0 3px #f9d5e2}
+.memory-modal-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:4px}
+.memory-modal-actions button{padding:10px 17px;border:0;border-radius:18px;font-size:13px;cursor:pointer}
+.memory-modal-cancel{background:#f8dce7;color:#a74670}
+.memory-modal-save{background:#ed91b1;color:white}
+.photo-viewer-backdrop{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;padding:55px 18px 22px;background:#321321e8;backdrop-filter:blur(5px);cursor:zoom-out}
+.photo-viewer-backdrop img{display:block;max-width:min(100%,1200px);max-height:100%;width:auto;height:auto;object-fit:contain;border:3px solid #fff4f8;border-radius:12px;box-shadow:0 12px 45px #0008;cursor:default}
+.photo-viewer-close{position:absolute;top:15px;right:18px;width:42px;height:42px;border:1px solid #f3bfd1;border-radius:50%;background:#fff5f9;color:#b83d70;font-size:29px;line-height:1;cursor:pointer}
+.memory-card img{cursor:zoom-in}
