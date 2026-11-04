@@ -39,7 +39,11 @@ document.addEventListener("DOMContentLoaded", () => {
           // Publishable keys are API keys, not JWTs.
           // Keep the apikey header, but do not send the publishable key
           // as an Authorization Bearer token to Storage.
-          if (headers.get("Authorization") === `Bearer ${SUPABASE_KEY}`) {
+          const authorization = headers.get("Authorization") || "";
+          if (
+            authorization === `Bearer ${SUPABASE_KEY}` ||
+            /^Bearer\s+sb_publishable_/i.test(authorization)
+          ) {
             headers.delete("Authorization");
           }
 
@@ -385,6 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
     status.textContent = "Fotoğraf ekleniyor... ♡";
 
     let imagePath = null;
+    let uploadStage = "fotoğraf dosyası yüklenirken";
 
     try {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
@@ -403,6 +408,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
       if (uploadError) throw uploadError;
+
+      uploadStage = "fotoğraf bilgisi veritabanına kaydedilirken";
 
       const { error: insertError } = await db
         .from("memories")
@@ -426,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     } catch (err) {
       console.error(err);
-      status.textContent = "Eklenemedi: " + err.message;
+      status.textContent = "Eklenemedi (" + uploadStage + "): " + err.message;
     } finally {
       saveButton.disabled = false;
     }
