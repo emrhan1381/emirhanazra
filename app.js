@@ -59,6 +59,91 @@ document.addEventListener("DOMContentLoaded", () => {
   gallery.before(uploadButton, uploadInput);
   gallery.after(galleryStatus);
 
+  // Site içi düzenleme penceresi (tarayıcı prompt'u kullanılmaz)
+  function openEditor({ heading, label, value = "", multiline = false, secondLabel = null, secondValue = "" }) {
+    return new Promise((resolve) => {
+      const overlay = document.createElement("div");
+      overlay.className = "memory-modal-backdrop";
+      const modal = document.createElement("section");
+      modal.className = "memory-modal";
+      const headingEl = document.createElement("h3");
+      headingEl.textContent = heading;
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "memory-modal-close";
+      close.textContent = "×";
+      close.setAttribute("aria-label", "Kapat");
+      const formEl = document.createElement("form");
+      formEl.className = "memory-editor-form";
+      const firstLabel = document.createElement("label");
+      firstLabel.textContent = label;
+      const firstField = multiline ? document.createElement("textarea") : document.createElement("input");
+      if (!multiline) firstField.type = "text";
+      firstField.value = value;
+      firstField.maxLength = multiline ? 1000 : 100;
+      firstLabel.appendChild(firstField);
+      formEl.appendChild(firstLabel);
+      let secondField = null;
+      if (secondLabel) {
+        const labelEl = document.createElement("label");
+        labelEl.textContent = secondLabel;
+        secondField = document.createElement("textarea");
+        secondField.value = secondValue;
+        secondField.maxLength = 1000;
+        labelEl.appendChild(secondField);
+        formEl.appendChild(labelEl);
+      }
+      const actions = document.createElement("div");
+      actions.className = "memory-modal-actions";
+      const cancel = document.createElement("button");
+      cancel.type = "button";
+      cancel.className = "memory-modal-cancel";
+      cancel.textContent = "Vazgeç";
+      const save = document.createElement("button");
+      save.type = "submit";
+      save.className = "memory-modal-save";
+      save.textContent = "Kaydet ♡";
+      actions.append(cancel, save);
+      formEl.appendChild(actions);
+      modal.append(close, headingEl, formEl);
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+      const finish = (result) => { overlay.remove(); resolve(result); };
+      close.addEventListener("click", () => finish(null));
+      cancel.addEventListener("click", () => finish(null));
+      overlay.addEventListener("click", (event) => { if (event.target === overlay) finish(null); });
+      formEl.addEventListener("submit", (event) => {
+        event.preventDefault();
+        finish({ value: firstField.value.trim(), secondValue: secondField ? secondField.value.trim() : undefined });
+      });
+      firstField.focus();
+    });
+  }
+
+  // Fotoğrafı büyük görüntüleme penceresi
+  function openPhotoViewer(src, alt) {
+    const overlay = document.createElement("div");
+    overlay.className = "photo-viewer-backdrop";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.className = "photo-viewer-close";
+    close.textContent = "×";
+    close.setAttribute("aria-label", "Fotoğrafı kapat");
+    const largeImage = document.createElement("img");
+    largeImage.src = src;
+    largeImage.alt = alt || "Büyük anı fotoğrafı";
+    overlay.append(close, largeImage);
+    document.body.appendChild(overlay);
+    const dismiss = () => overlay.remove();
+    close.addEventListener("click", dismiss);
+    overlay.addEventListener("click", (event) => { if (event.target === overlay) dismiss(); });
+    const onKey = (event) => {
+      if (event.key === "Escape") { dismiss(); document.removeEventListener("keydown", onKey); }
+    };
+    document.addEventListener("keydown", onKey);
+    close.addEventListener("click", () => document.removeEventListener("keydown", onKey));
+  }
+
   async function loadPhotos() {
     galleryStatus.textContent = "Anılar yükleniyor…";
     const { data, error: loadError } = await supabaseClient
@@ -86,7 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
         image.src = memory.image_url;
         image.alt = memory.title || "Ortak anımız";
         image.loading = "lazy";
-        image.title = memory.title || "Ortak anımız";
+        image.title = "Büyütmek için tıkla";
+        image.addEventListener("click", () => openPhotoViewer(memory.image_url, memory.title));
         const details = document.createElement("div");
         details.className = "memory-details";
         const title = document.createElement("h3");
@@ -110,10 +196,10 @@ document.addEventListener("DOMContentLoaded", () => {
         editTitleButton.type = "button";
         editTitleButton.textContent = "Başlığı düzenle";
         editTitleButton.addEventListener("click", async () => {
-          const nextTitle = window.prompt("Anının yeni başlığı:", memory.title || "");
-          if (nextTitle === null) return;
+          const edited = await openEditor({ heading: "Anı başlığını düzenle ♡", label: "Başlık", value: memory.title || "" });
+          if (edited === null) return;
           const { error: updateError } = await supabaseClient.from("memories")
-            .update({ title: nextTitle.trim() || "İsimsiz anı" }).eq("id", memory.id);
+            .update({ title: edited.value || "İsimsiz anı" }).eq("id", memory.id);
           if (updateError) {
             galleryStatus.textContent = "Başlık güncellenemedi: " + updateError.message;
             return;
@@ -126,10 +212,10 @@ document.addEventListener("DOMContentLoaded", () => {
         editDescriptionButton.type = "button";
         editDescriptionButton.textContent = "Açıklamayı düzenle";
         editDescriptionButton.addEventListener("click", async () => {
-          const nextDescription = window.prompt("Anının yeni açıklaması:", memory.description || "");
-          if (nextDescription === null) return;
+          const edited = await openEditor({ heading: "Anı açıklamasını düzenle ♡", label: "Açıklama", value: memory.description || "", multiline: true });
+          if (edited === null) return;
           const { error: updateError } = await supabaseClient.from("memories")
-            .update({ description: nextDescription.trim() }).eq("id", memory.id);
+            .update({ description: edited.value }).eq("id", memory.id);
           if (updateError) {
             galleryStatus.textContent = "Açıklama güncellenemedi: " + updateError.message;
             return;
@@ -143,7 +229,11 @@ document.addEventListener("DOMContentLoaded", () => {
         deleteButton.textContent = "Fotoğrafı sil";
         deleteButton.className = "memory-menu-delete";
         deleteButton.addEventListener("click", async () => {
-          if (!window.confirm("Bu anıyı silmek istediğinize emin misiniz?")) return;
+          const choice = await openEditor({ heading: "Bu anıyı silmek istiyor musun?", label: "Onaylamak için 'SİL' yaz", value: "" });
+          if (choice === null || choice.value !== "SİL") {
+            if (choice !== null) galleryStatus.textContent = "Silme işlemi iptal edildi.";
+            return;
+          }
           deleteButton.disabled = true;
           galleryStatus.textContent = "Anı siliniyor…";
           try {
@@ -196,10 +286,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const title = window.prompt("Bu anıya bir başlık ver ♡", file.name.replace(/\\.[^.]+$/, ""));
-    if (title === null) { uploadInput.value = ""; return; }
-    const description = window.prompt("Bu anı için kısa bir açıklama yaz (isteğe bağlı):", "");
-    if (description === null) { uploadInput.value = ""; return; }
+    const entry = await openEditor({
+      heading: "Yeni bir anı ekle ♡",
+      label: "Anı başlığı",
+      value: file.name.replace(/\\.[^.]+$/, ""),
+      secondLabel: "Açıklama (isteğe bağlı)",
+      secondValue: ""
+    });
+    if (entry === null) { uploadInput.value = ""; return; }
 
     uploadButton.disabled = true;
     galleryStatus.textContent = "Fotoğraf yükleniyor…";
@@ -213,8 +307,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const { data: publicData } = supabaseClient.storage.from(BUCKET).getPublicUrl(filePath);
       const { error: insertError } = await supabaseClient.from("memories").insert({
-        title: title.trim() || "İsimsiz anı",
-        description: description.trim(),
+        title: entry.value || "İsimsiz anı",
+        description: entry.secondValue || "",
         image_url: publicData.publicUrl
       });
       if (insertError) throw insertError;
