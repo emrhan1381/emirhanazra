@@ -126,6 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   photoForm.insertBefore(addLabel, photoForm.firstChild);
   photoForm.insertBefore(photos, photoForm.children[1]);
+  photoForm.querySelector("#photo-status").textContent = "Albüm hazır ♡";
 
   gallery.parentElement.insertBefore(photoForm, gallery);
 
@@ -164,6 +165,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     #photos {
       display: none;
+    }
+
+    #photo-status {
+      min-height: 22px;
+      margin: 4px 0;
+      color: #604452;
+      font-size: 14px;
+      font-weight: 600;
     }
 
     #photo-form button,
