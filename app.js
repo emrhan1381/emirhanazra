@@ -80,12 +80,49 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       data.forEach((memory) => {
         if (!memory.image_url) return;
+        const card = document.createElement("article");
+        card.className = "memory-card";
         const image = document.createElement("img");
         image.src = memory.image_url;
         image.alt = memory.title || "Ortak anımız";
         image.loading = "lazy";
         image.title = memory.title || "Ortak anımız";
-        gallery.appendChild(image);
+        const details = document.createElement("div");
+        details.className = "memory-details";
+        const title = document.createElement("h3");
+        title.textContent = memory.title || "İsimsiz anı";
+        const description = document.createElement("p");
+        description.textContent = memory.description || "";
+        details.append(title, description);
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete-memory";
+        deleteButton.textContent = "Sil ♡";
+        deleteButton.addEventListener("click", async () => {
+          if (!window.confirm("Bu anıyı silmek istediğinize emin misiniz?")) return;
+          deleteButton.disabled = true;
+          galleryStatus.textContent = "Anı siliniyor…";
+          try {
+            const marker = "/storage/v1/object/public/" + BUCKET + "/";
+            const filePath = memory.image_url.includes(marker)
+              ? decodeURIComponent(memory.image_url.split(marker)[1].split("?")[0])
+              : null;
+            if (filePath) {
+              const { error: storageError } = await supabaseClient.storage.from(BUCKET).remove([filePath]);
+              if (storageError) throw storageError;
+            }
+            const { error: deleteError } = await supabaseClient.from("memories").delete().eq("id", memory.id);
+            if (deleteError) throw deleteError;
+            await loadPhotos();
+            galleryStatus.textContent = "Anı silindi ♡";
+          } catch (deleteError) {
+            console.error("Anı silme hatası:", deleteError);
+            galleryStatus.textContent = "Silinemedi: " + (deleteError.message || "Supabase izinlerini kontrol et.");
+            deleteButton.disabled = false;
+          }
+        });
+        card.append(image, details, deleteButton);
+        gallery.appendChild(card);
       });
     }
     galleryStatus.textContent = "";
@@ -107,6 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    const title = window.prompt("Bu anıya bir başlık ver ♡", file.name.replace(/\\.[^.]+$/, ""));
+    if (title === null) { uploadInput.value = ""; return; }
+    const description = window.prompt("Bu anı için kısa bir açıklama yaz (isteğe bağlı):", "");
+    if (description === null) { uploadInput.value = ""; return; }
+
     uploadButton.disabled = true;
     galleryStatus.textContent = "Fotoğraf yükleniyor…";
     try {
@@ -119,8 +161,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const { data: publicData } = supabaseClient.storage.from(BUCKET).getPublicUrl(filePath);
       const { error: insertError } = await supabaseClient.from("memories").insert({
-        title: file.name,
-        description: "",
+        title: title.trim() || "İsimsiz anı",
+        description: description.trim(),
         image_url: publicData.publicUrl
       });
       if (insertError) throw insertError;
