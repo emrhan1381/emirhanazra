@@ -10,8 +10,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const screen = document.getElementById("password-screen");
   const content = document.getElementById("site-content");
   const gallery = document.getElementById("gallery");
-  const photos = document.getElementById("photos");
-  const addLabel = document.querySelector('label[for="photos"]');
+
+  let photos = document.getElementById("photos");
+  let addLabel = document.querySelector('label[for="photos"]');
 
   const wrongMessages = [
     "Ne yani hatırlamıyor musun?",
@@ -27,48 +28,95 @@ document.addEventListener("DOMContentLoaded", () => {
     db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   }
 
-  // İlişki sayacı
+  // İLİŞKİ SAYACI
+
   const start = new Date("2026-10-14T00:00:00");
 
   function tick() {
-    const seconds = Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000));
+    const seconds = Math.max(
+      0,
+      Math.floor((Date.now() - start.getTime()) / 1000)
+    );
 
-    document.getElementById("days").textContent = Math.floor(seconds / 86400);
-    document.getElementById("hours").textContent = Math.floor((seconds % 86400) / 3600);
-    document.getElementById("minutes").textContent = Math.floor((seconds % 3600) / 60);
-    document.getElementById("seconds").textContent = seconds % 60;
+    document.getElementById("days").textContent =
+      Math.floor(seconds / 86400);
+
+    document.getElementById("hours").textContent =
+      Math.floor((seconds % 86400) / 3600);
+
+    document.getElementById("minutes").textContent =
+      Math.floor((seconds % 3600) / 60);
+
+    document.getElementById("seconds").textContent =
+      seconds % 60;
   }
 
   tick();
   setInterval(tick, 1000);
 
-  // Anı ekleme alanı
-  const memoryForm = document.createElement("form");
-  memoryForm.id = "memory-form";
-  memoryForm.innerHTML = `
-    <input id="memory-title" type="text"
-      placeholder="Anının başlığı ♡" maxlength="100" required>
+  // FOTOĞRAF GALERİSİ FORMU
 
-    <textarea id="memory-description"
-      placeholder="Bu anıyı anlatan küçük bir not yaz... ♡"
-      rows="3" maxlength="2000"></textarea>
+  const photoForm = document.createElement("form");
+  photoForm.id = "photo-form";
 
-    <button type="submit" id="save-memory">Anıyı Kaydet ♡</button>
-    <p id="memory-status" aria-live="polite"></p>
+  if (!photos) {
+    photos = document.createElement("input");
+    photos.id = "photos";
+    photos.type = "file";
+  }
+
+  photos.type = "file";
+  photos.accept = "image/*";
+  photos.multiple = false;
+
+  if (!addLabel) {
+    addLabel = document.createElement("label");
+    addLabel.htmlFor = "photos";
+  }
+
+  addLabel.textContent = "＋ Fotoğraf Seç ♡";
+
+  photoForm.innerHTML = `
+    <input
+      id="photo-title"
+      type="text"
+      placeholder="Fotoğrafın başlığı ♡"
+      maxlength="100"
+      required
+    >
+
+    <textarea
+      id="photo-description"
+      placeholder="Fotoğrafın açıklaması... ♡"
+      rows="3"
+      maxlength="2000"
+    ></textarea>
+
+    <button type="submit" id="save-photo">
+      Fotoğrafı Ekle ♡
+    </button>
+
+    <p id="photo-status" aria-live="polite"></p>
   `;
 
-  gallery.parentElement.insertBefore(memoryForm, gallery);
+  photoForm.insertBefore(addLabel, photoForm.firstChild);
+  photoForm.insertBefore(photos, photoForm.children[1]);
 
-  // Form görünümü
+  gallery.parentElement.insertBefore(photoForm, gallery);
+
+  // TASARIM
+
   const style = document.createElement("style");
+
   style.textContent = `
-    #memory-form {
+    #photo-form {
       display: grid;
-      gap: 10px;
-      margin: 18px 0;
+      gap: 12px;
+      margin: 20px 0;
     }
-    #memory-form input,
-    #memory-form textarea {
+
+    #photo-form input,
+    #photo-form textarea {
       width: 100%;
       box-sizing: border-box;
       padding: 12px;
@@ -78,9 +126,24 @@ document.addEventListener("DOMContentLoaded", () => {
       color: #604452;
       font: inherit;
     }
-    #memory-form button,
-    .delete-memory {
-      padding: 10px 16px;
+
+    #photo-form label {
+      display: inline-block;
+      padding: 12px 16px;
+      border-radius: 12px;
+      background: #f4dce5;
+      color: #633f50;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    #photos {
+      display: none;
+    }
+
+    #photo-form button,
+    .delete-photo {
+      padding: 11px 16px;
       border: 0;
       border-radius: 12px;
       background: #e9b6c9;
@@ -88,43 +151,49 @@ document.addEventListener("DOMContentLoaded", () => {
       font: inherit;
       cursor: pointer;
     }
-    .memory-card {
+
+    .photo-card {
       padding: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       border-radius: 15px;
       background: #fffafd;
       border: 1px solid #f0d5df;
     }
-    .memory-card img {
+
+    .photo-card img {
       display: block;
       width: 100%;
       height: auto;
       border-radius: 12px;
       margin-bottom: 10px;
     }
-    .memory-card h3 {
+
+    .photo-card h3 {
       margin: 8px 0;
+      color: #604452;
     }
-    .memory-card p {
+
+    .photo-card p {
       white-space: pre-wrap;
+      color: #806271;
     }
-    .delete-memory {
+
+    .delete-photo {
       background: #f4dce5;
       margin-top: 8px;
     }
+
+    .delete-photo:disabled,
+    #save-photo:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
   `;
+
   document.head.appendChild(style);
 
-  // Fotoğraf seçimi
-  if (photos) {
-    photos.multiple = false;
-  }
+  // GİRİŞ SİSTEMİ
 
-  if (addLabel) {
-    addLabel.textContent = "＋ Fotoğraf Seç ♡";
-  }
-
-  // Giriş
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -133,10 +202,11 @@ document.addEventListener("DOMContentLoaded", () => {
       content.hidden = false;
 
       if (db) {
-        await loadMemories();
+        await loadPhotos();
       } else {
         gallery.textContent = "Supabase bağlantısı kurulamadı.";
       }
+
       return;
     }
 
@@ -148,66 +218,72 @@ document.addEventListener("DOMContentLoaded", () => {
     input.focus();
   });
 
-  // Anıları yükle
-  async function loadMemories() {
-    gallery.innerHTML = "<p>♡ Anılar yükleniyor...</p>";
+  // FOTOĞRAFLARI YÜKLE
+
+  async function loadPhotos() {
+    gallery.innerHTML = "<p>♡ Fotoğraflar yükleniyor...</p>";
 
     const { data, error: dbError } = await db
       .from("memories")
       .select("id,title,description,image_url,created_at")
+      .not("image_url", "is", null)
       .order("created_at", { ascending: false });
 
     if (dbError) {
       console.error(dbError);
-      gallery.textContent = "Anılar yüklenemedi: " + dbError.message;
+      gallery.textContent = "Fotoğraflar yüklenemedi: " + dbError.message;
       return;
     }
 
     gallery.innerHTML = "";
 
     if (!data || data.length === 0) {
-      gallery.innerHTML = "<p>Henüz anı eklenmemiş. ♡</p>";
+      gallery.innerHTML = "<p>Henüz fotoğraf eklenmemiş. ♡</p>";
       return;
     }
 
-    for (const memory of data) {
+    for (const photo of data) {
       const card = document.createElement("article");
-      card.className = "memory-card";
+      card.className = "photo-card";
 
-      if (memory.image_url) {
-        const { data: imageData, error: imageError } = await db
-          .storage
-          .from(BUCKET)
-          .createSignedUrl(memory.image_url, 3600);
+      const { data: imageData, error: imageError } = await db
+        .storage
+        .from(BUCKET)
+        .createSignedUrl(photo.image_url, 3600);
 
-        if (!imageError && imageData?.signedUrl) {
-          const img = document.createElement("img");
-          img.src = imageData.signedUrl;
-          img.alt = memory.title || "Anımız";
-          img.loading = "lazy";
-          card.appendChild(img);
-        } else {
-          console.error(imageError);
-        }
+      if (imageError || !imageData?.signedUrl) {
+        console.error(imageError);
+        continue;
       }
+
+      const img = document.createElement("img");
+      img.src = imageData.signedUrl;
+      img.alt = photo.title || "Fotoğrafımız";
+      img.loading = "lazy";
+
+      card.appendChild(img);
 
       const title = document.createElement("h3");
-      title.textContent = memory.title || "Adsız anı";
+      title.textContent = photo.title || "Başlıksız fotoğraf";
       card.appendChild(title);
 
-      if (memory.description) {
-        const note = document.createElement("p");
-        note.textContent = memory.description;
-        card.appendChild(note);
+      if (photo.description) {
+        const description = document.createElement("p");
+        description.textContent = photo.description;
+        card.appendChild(description);
       }
+
+      // FOTOĞRAF SİLME
 
       const deleteButton = document.createElement("button");
       deleteButton.type = "button";
-      deleteButton.className = "delete-memory";
-      deleteButton.textContent = "Anıyı Sil";
+      deleteButton.className = "delete-photo";
+      deleteButton.textContent = "Fotoğrafı Sil";
 
       deleteButton.addEventListener("click", async () => {
-        if (!confirm("Bu anıyı silmek istediğinize emin misiniz?")) return;
+        if (!confirm("Bu fotoğrafı silmek istediğinize emin misiniz?")) {
+          return;
+        }
 
         deleteButton.disabled = true;
         deleteButton.textContent = "Siliniyor...";
@@ -215,29 +291,28 @@ document.addEventListener("DOMContentLoaded", () => {
         const { error: deleteError } = await db
           .from("memories")
           .delete()
-          .eq("id", memory.id);
+          .eq("id", photo.id);
 
         if (deleteError) {
           console.error(deleteError);
-          alert("Anı silinemedi: " + deleteError.message);
+          alert("Fotoğraf silinemedi: " + deleteError.message);
+
           deleteButton.disabled = false;
-          deleteButton.textContent = "Anıyı Sil";
+          deleteButton.textContent = "Fotoğrafı Sil";
           return;
         }
 
-        if (memory.image_url) {
-          const { error: storageError } = await db
-            .storage
-            .from(BUCKET)
-            .remove([memory.image_url]);
+        const { error: storageError } = await db
+          .storage
+          .from(BUCKET)
+          .remove([photo.image_url]);
 
-          if (storageError) {
-            console.error(storageError);
-            alert("Anı silindi ancak fotoğraf dosyası depolamada kaldı.");
-          }
+        if (storageError) {
+          console.error(storageError);
+          alert("Fotoğraf kaydı silindi ancak depolama dosyası kaldı.");
         }
 
-        await loadMemories();
+        await loadPhotos();
       });
 
       card.appendChild(deleteButton);
@@ -245,8 +320,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Yeni anı kaydet
-  memoryForm.addEventListener("submit", async (event) => {
+  // YENİ FOTOĞRAF EKLEME
+
+  photoForm.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     if (!db) {
@@ -254,73 +330,85 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const title = document.getElementById("memory-title").value.trim();
-    const description = document.getElementById("memory-description").value.trim();
+    const title = document.getElementById("photo-title").value.trim();
+    const description = document
+      .getElementById("photo-description")
+      .value.trim();
+
     const file = photos.files[0];
 
-    if (!title) {
-      alert("Anıya bir başlık yazmalısınız.");
+    if (!file) {
+      alert("Lütfen bir fotoğraf seçin.");
       return;
     }
 
-    const saveButton = document.getElementById("save-memory");
-    const status = document.getElementById("memory-status");
+    if (!title) {
+      alert("Fotoğrafa bir başlık yazın.");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      alert("Lütfen geçerli bir fotoğraf seçin.");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert("Fotoğraf 10 MB sınırını aşıyor.");
+      return;
+    }
+
+    const saveButton = document.getElementById("save-photo");
+    const status = document.getElementById("photo-status");
 
     saveButton.disabled = true;
-    status.textContent = "Anı kaydediliyor... ♡";
+    status.textContent = "Fotoğraf ekleniyor... ♡";
 
     let imagePath = null;
 
     try {
-      if (file) {
-        if (!file.type.startsWith("image/")) {
-          throw new Error("Lütfen bir fotoğraf seçin.");
-        }
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
 
-        if (file.size > 10 * 1024 * 1024) {
-          throw new Error("Fotoğraf 10 MB sınırını aşıyor.");
-        }
+      imagePath =
+        (crypto.randomUUID?.() || Date.now().toString()) +
+        "-" + safeName;
 
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
-        imagePath = crypto.randomUUID() + "-" + safeName;
+      const { error: uploadError } = await db
+        .storage
+        .from(BUCKET)
+        .upload(imagePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+          contentType: file.type
+        });
 
-        const { error: uploadError } = await db
-          .storage
-          .from(BUCKET)
-          .upload(imagePath, file, {
-            cacheControl: "3600",
-            upsert: false,
-            contentType: file.type
-          });
-
-        if (uploadError) throw uploadError;
-      }
+      if (uploadError) throw uploadError;
 
       const { error: insertError } = await db
         .from("memories")
         .insert({
-          title,
-          description,
+          title: title,
+          description: description,
           image_url: imagePath
         });
 
       if (insertError) {
-        if (imagePath) {
-          await db.storage.from(BUCKET).remove([imagePath]);
-        }
+        await db.storage.from(BUCKET).remove([imagePath]);
         throw insertError;
       }
 
-      memoryForm.reset();
-      photos.value = "";
-      status.textContent = "Anınız kaydedildi! ♡";
-      await loadMemories();
+      photoForm.reset();
+      status.textContent = "Fotoğraf başarıyla eklendi! ♡";
+
+      await loadPhotos();
+
+      status.textContent = "Fotoğraf başarıyla eklendi! ♡";
 
     } catch (err) {
       console.error(err);
-      status.textContent = "Kaydedilemedi: " + err.message;
+      status.textContent = "Eklenemedi: " + err.message;
     } finally {
       saveButton.disabled = false;
     }
   });
 });
+
